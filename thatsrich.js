@@ -43,6 +43,8 @@ while ((match = regexp.exec(textarea.value)) !== null) {
 
 textarea.value = value + textarea.value.slice(end);
 
+var length = textarea.value.length;
+
 $(textarea).on({
   click: function (evt) {
       if (this.selectionStart > tableStart - 1 && this.selectionStart < tableStart + tableLength + 1) {
@@ -215,4 +217,47 @@ $(textarea).on({
 
           break;
       }
+    },
+
+  input: function (evt) {
+      var inputLength = this.value.length - length,
+        rowLength = indent + cols.reduce(function (a, b) { return a + b }) + cols.length * 3 + 2;
+
+      if (cells[rowIdx][colIdx] === cols[colIdx]) {
+        var end = tableStart + indent + colStart + cols[colIdx] + 3,
+          value = inputLength > 0 ? this.value.slice(0, end) + Array(inputLength + 1).join('-') : this.value.slice(0, end + inputLength);
+        for (var idx = 0; idx < rows.length; idx += 1) {
+          if (idx !== rowIdx) {
+            for (var nstIdx = 0; nstIdx < rows[idx]; nstIdx += 1) {
+              var start = end; end += rowLength;
+
+              value += inputLength > 0 ? this.value.slice(start, end) + Array(inputLength + 1).join(' ') : this.value.slice(start, end + inputLength);
+            }
+
+            var start = end; end += rowLength;
+          } else {
+            var start = end; end += 2 * rowLength + inputLength;
+          }
+
+          value += inputLength > 0 ? this.value.slice(start, end) + Array(inputLength + 1).join('-') : this.value.slice(start, end + inputLength);
+        }
+
+        this.value = value + this.value.slice(end);
+
+        cols[colIdx] += inputLength;
+
+        rowStart += (2 * rowIdx + 1) * inputLength;
+
+        this.selectionStart = this.selectionEnd = selectionStart = selectionEnd += 2 * (rowIdx + 1) * inputLength;
+      } else {
+        var end = rowStart + colStart + cols[colIdx] + 3 + inputLength;
+
+        this.value = (inputLength > 0 ? this.value.slice(0, end - inputLength) : this.value.slice(0, end) + Array(1 - inputLength).join(' ')) + this.value.slice(end);
+
+        this.selectionStart = this.selectionEnd = selectionStart = selectionEnd += inputLength;
+      }
+
+      cells[rowIdx][colIdx] += inputLength;
+
+      length = this.value.length;
     } });
