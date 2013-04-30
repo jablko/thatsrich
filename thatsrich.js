@@ -43,59 +43,176 @@ while ((match = regexp.exec(textarea.value)) !== null) {
 
 textarea.value = value + textarea.value.slice(end);
 
-$(textarea).on('click', function (evt) {
-    if (this.selectionStart > tableStart - 1 && this.selectionStart < tableStart + tableLength + 1) {
+$(textarea).on({
+  click: function (evt) {
+      if (this.selectionStart > tableStart - 1 && this.selectionStart < tableStart + tableLength + 1) {
+        var rowLength = indent + cols.reduce(function (a, b) { return a + b }) + cols.length * 3 + 2,
+          rowOffset = (this.selectionStart - tableStart) % rowLength - indent;
+
+        var start = tableStart + indent + rowLength;
+        for (var idx = 0; idx < rows.length; idx += 1) {
+          if (this.selectionStart > start && this.selectionStart < start + rows[idx] * rowLength - indent - 1) {
+            var nstRowIdx = idx,
+              nstRowStart = start;
+
+            break;
+          } else {
+            start += (rows[idx] + 1) * rowLength;
+          }
+        }
+
+        var start = 0;
+        for (var idx = 0; idx < cols.length; idx += 1) {
+          if (rowOffset > start && rowOffset < start + cols[idx] + 4) {
+            var nstColIdx = idx,
+              nstColStart = start;
+
+            break;
+          } else {
+            start += cols[idx] + 3;
+          }
+        }
+
+        if (nstRowIdx !== undefined && nstColIdx !== undefined) {
+          rowIdx = nstRowIdx; colIdx = nstColIdx;
+          rowStart = nstRowStart; colStart = nstColStart;
+
+          if (rowOffset < colStart + 2) {
+            selectionStart = selectionEnd = this.selectionStart = this.selectionEnd = rowStart + colStart + 2;
+          } else if (rowOffset > colStart + 2 + cells[rowIdx][colIdx]) {
+            selectionStart = selectionEnd = this.selectionStart = this.selectionEnd = rowStart + colStart + 2 + cells[rowIdx][colIdx];
+          } else {
+            selectionStart = this.selectionStart;
+            selectionEnd = this.selectionEnd;
+          }
+
+          $message.html('');
+        } else {
+          this.selectionStart = selectionStart;
+          this.selectionEnd = selectionEnd;
+
+          $message.html('Click in a cell to edit.');
+        }
+      } else {
+        selectionStart = this.selectionStart;
+        selectionEnd = this.selectionEnd;
+
+        $message.html('');
+      }
+    },
+
+  keypress: function (evt) {
       var rowLength = indent + cols.reduce(function (a, b) { return a + b }) + cols.length * 3 + 2,
         rowOffset = (this.selectionStart - tableStart) % rowLength - indent;
 
-      var start = tableStart + indent + rowLength;
-      for (var idx = 0; idx < rows.length; idx += 1) {
-        if (this.selectionStart > start && this.selectionStart < start + rows[idx] * rowLength - indent - 1) {
-          var nstRowIdx = idx,
-            nstRowStart = start;
+      switch (evt.keyCode) {
+
+        // Tab
+        case 9:
+          evt.preventDefault();
+
+          if (evt.shiftKey) {
+            if (colIdx < 1) {
+              rowIdx -= 1; colIdx = cols.length - 1;
+              rowStart -= (rows[rowIdx] + 1) * rowLength; colStart = rowLength - indent - cols[colIdx] - 5;
+            } else {
+              colIdx -= 1;
+              colStart -= cols[colIdx] + 3;
+            }
+          } else {
+            if (colIdx > cols.length - 2) {
+              rowStart += (rows[rowIdx] + 1) * rowLength; colStart = 0;
+              rowIdx += 1; colIdx = 0;
+            } else {
+              colStart += cols[colIdx] + 3;
+              colIdx += 1;
+            }
+          }
+
+          selectionStart = this.selectionStart = rowStart + colStart + 2;
+          selectionEnd = this.selectionEnd = rowStart + colStart + 2 + cells[rowIdx][colIdx];
 
           break;
-        } else {
-          start += (rows[idx] + 1) * rowLength;
-        }
-      }
 
-      var start = 0;
-      for (var idx = 0; idx < cols.length; idx += 1) {
-        if (rowOffset > start && rowOffset < start + cols[idx] + 4) {
-          var nstColIdx = idx,
-            nstColStart = start;
+        // Enter
+        case 13:
+          evt.preventDefault();
+
+          if (evt.shiftKey) {
+            rowIdx -= 1;
+            rowStart -= (rows[rowIdx] + 1) * rowLength;
+          } else {
+            rowStart += (rows[rowIdx] + 1) * rowLength; colStart = 0;
+            rowIdx += 1; colIdx = 0;
+
+            $message.html('For a newline, press <kbd>ESC</kbd> then <kbd>Enter</kbd>.');
+          }
+
+          selectionStart = this.selectionStart = rowStart + colStart + 2;
+          selectionEnd = this.selectionEnd = rowStart + colStart + 2 + cells[rowIdx][colIdx];
 
           break;
-        } else {
-          start += cols[idx] + 3;
-        }
+
+        // Left arrow
+        case 37:
+          if (rowOffset < colStart + 3) {
+            if (colIdx < 1) {
+              rowIdx -= 1; colIdx = cols.length - 1;
+              rowStart -= (rows[rowIdx] + 1) * rowLength; colStart = rowLength - indent - cols[colIdx] - 5;
+            } else {
+              colIdx -= 1;
+              colStart -= cols[colIdx] + 3;
+            }
+
+            selectionStart = selectionEnd = this.selectionStart = this.selectionEnd = rowStart + colStart + cells[rowIdx][colIdx] + 3;
+          }
+
+          break;
+
+        // Up arrow
+        case 38:
+          rowIdx -= 1;
+          rowStart -= (rows[rowIdx] + 1) * rowLength;
+
+          if (rowOffset > colStart + 2 + cells[rowIdx][colIdx]) {
+            selectionStart = selectionEnd = this.selectionStart = this.selectionEnd = rowStart + colStart + 2 + cells[rowIdx][colIdx];
+
+            evt.preventDefault();
+          } else {
+            selectionStart = selectionEnd = this.selectionStart = this.selectionEnd -= rowLength;
+          }
+
+          break;
+
+        // Right arrow
+        case 39:
+          if (rowOffset > colStart + 1 + cells[rowIdx][colIdx]) {
+            if (colIdx > cols.length - 2) {
+              rowStart += (rows[rowIdx] + 1) * rowLength; colStart = 0;
+              rowIdx += 1; colIdx = 0;
+            } else {
+              colStart += cols[colIdx] + 3;
+              colIdx += 1;
+            }
+
+            selectionStart = selectionEnd = this.selectionStart = this.selectionEnd = rowStart + colStart + 1;
+          }
+
+          break;
+
+        // Down arrow
+        case 40:
+          rowStart += (rows[rowIdx] + 1) * rowLength;
+          rowIdx += 1;
+
+          if (rowOffset > colStart + 2 + cells[rowIdx][colIdx]) {
+            selectionStart = selectionEnd = this.selectionStart = this.selectionEnd = rowStart + colStart + 2 + cells[rowIdx][colIdx];
+
+            evt.preventDefault();
+          } else {
+            selectionStart = selectionEnd = this.selectionStart = this.selectionEnd += rowLength;
+          }
+
+          break;
       }
-
-      if (nstRowIdx !== undefined && nstColIdx !== undefined) {
-        rowIdx = nstRowIdx; colIdx = nstColIdx;
-        rowStart = nstRowStart; colStart = nstColStart;
-
-        if (rowOffset < colStart + 2) {
-          selectionStart = selectionEnd = this.selectionStart = this.selectionEnd = rowStart + colStart + 2;
-        } else if (rowOffset > colStart + 2 + cells[rowIdx][colIdx]) {
-          selectionStart = selectionEnd = this.selectionStart = this.selectionEnd = rowStart + colStart + 2 + cells[rowIdx][colIdx];
-        } else {
-          selectionStart = this.selectionStart;
-          selectionEnd = this.selectionEnd;
-        }
-
-        $message.html('');
-      } else {
-        this.selectionStart = selectionStart;
-        this.selectionEnd = selectionEnd;
-
-        $message.html('Click in a cell to edit.');
-      }
-    } else {
-      selectionStart = this.selectionStart;
-      selectionEnd = this.selectionEnd;
-
-      $message.html('');
-    }
-  });
+    } });
