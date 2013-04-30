@@ -622,3 +622,70 @@ test('Submit', function () {
 
     $form.remove();
   });
+
+test('Input and submit', function () {
+    var $form = $('<form>').appendTo(document.body);
+      $textarea = $([
+        '<textarea id="wpTextbox1">',
+        'Before',
+        '{|',
+        '|a',
+        '|b',
+        '|c',
+        '|-',
+        '|d',
+        '|e',
+        '|f',
+        '|-',
+        '|g',
+        '|h',
+        '|i',
+        '|}',
+        'After',
+        '</textarea>',
+        '<script src="../thatsrich.js">'].join('\n')).appendTo($form);
+
+    $textarea[0].selectionStart = $textarea[0].selectionEnd = 68;
+
+    browserBot.triggerMouseEvent($textarea[0], 'click', true);
+
+    $textarea.val([
+      'Before',
+      '   +---+---+---+',
+      '   | a | b | c |',
+      '   +---+---+---+',
+      '   | d | ex | f |',
+      '   +---+---+---+',
+      '   | g | h | i |',
+      '   +---+---+---+',
+      'After',
+      ''].join('\n'));
+
+    triggerEvent($textarea[0], 'input', true);
+
+    var evt = document.createEvent('HTMLEvents');
+    evt.initEvent('submit', true, true);
+    evt.preventDefault();
+
+    $form[0].dispatchEvent(evt);
+
+    equal($textarea.val(), [
+      'Before',
+      '{|',
+      '|a',
+      '|b',
+      '|c',
+      '|-',
+      '|d',
+      '|ex',
+      '|f',
+      '|-',
+      '|g',
+      '|h',
+      '|i',
+      '|}',
+      'After',
+      ''].join('\n'));
+
+    $form.remove();
+  });

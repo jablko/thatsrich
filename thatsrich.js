@@ -248,6 +248,8 @@ $(textarea).on({
 
         rowStart += (2 * rowIdx + 1) * inputLength;
 
+        tableLength += (2 * rows.length + 1) * inputLength;
+
         this.selectionStart = this.selectionEnd = selectionStart = selectionEnd += 2 * (rowIdx + 1) * inputLength;
       } else {
         var end = rowStart + colStart + cols[colIdx] + 3 + inputLength;
