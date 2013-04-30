@@ -573,3 +573,52 @@ test('Delete', function () {
 
     $textarea.remove();
   });
+
+test('Submit', function () {
+    var $form = $('<form>').appendTo(document.body);
+      $textarea = $([
+        '<textarea id="wpTextbox1">',
+        'Before',
+        '{|',
+        '|a',
+        '|b',
+        '|c',
+        '|-',
+        '|d',
+        '|e',
+        '|f',
+        '|-',
+        '|g',
+        '|h',
+        '|i',
+        '|}',
+        'After',
+        '</textarea>',
+        '<script src="../thatsrich.js">'].join('\n')).appendTo($form);
+
+    var evt = document.createEvent('HTMLEvents');
+    evt.initEvent('submit', true, true);
+    evt.preventDefault();
+
+    $form[0].dispatchEvent(evt);
+
+    equal($textarea.val(), [
+      'Before',
+      '{|',
+      '|a',
+      '|b',
+      '|c',
+      '|-',
+      '|d',
+      '|e',
+      '|f',
+      '|-',
+      '|g',
+      '|h',
+      '|i',
+      '|}',
+      'After',
+      ''].join('\n'));
+
+    $form.remove();
+  });

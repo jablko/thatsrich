@@ -261,3 +261,18 @@ $(textarea).on({
 
       length = this.value.length;
     } });
+
+$(textarea.form).on('submit', function () {
+    var rowLength = indent + cols.reduce(function (a, b) { return a + b }) + cols.length * 3 + 2,
+      end = tableStart;
+
+    textarea.value = textarea.value.slice(0, tableStart) + '{|\n' + cells.map(function (itm, rowIdx) {
+        end += rowLength + indent + 2;
+
+        return itm.map(function (itm, colIdx) {
+            var start = end; end += cols[colIdx] + 3;
+
+            return '|' + textarea.value.slice(start, start + itm);
+          }).join('\n');
+      }).join('\n|-\n') + '\n|}' + textarea.value.slice(tableStart + tableLength);
+  });
