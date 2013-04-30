@@ -172,3 +172,36 @@ test('Click outside cell', function () {
 
     $textarea.remove();
   });
+
+test('Click outside table', function () {
+    var $textarea = $([
+      '<textarea id="wpTextbox1">',
+      'Before',
+      '{|',
+      '|a',
+      '|b',
+      '|c',
+      '|-',
+      '|d',
+      '|e',
+      '|f',
+      '|-',
+      '|g',
+      '|h',
+      '|i',
+      '|}',
+      'After',
+      '</textarea>',
+      '<script src="../thatsrich.js">'].join('\n')).appendTo(document.body);
+
+    $textarea[0].selectionStart = $textarea[0].selectionEnd = 126;
+
+    browserBot.triggerMouseEvent($textarea[0], 'click', true);
+
+    equal($textarea[0].selectionStart, 126);
+    equal($textarea[0].selectionEnd, 126);
+
+    equal($('div:eq(-1)').html(), '');
+
+    $textarea.remove();
+  });
