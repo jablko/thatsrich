@@ -689,3 +689,40 @@ test('Input and submit', function () {
 
     $form.remove();
   });
+
+test('Paste', function () {
+    var $textarea = $([
+      '<textarea id="wpTextbox1">',
+      'Before',
+      'After',
+      '</textarea>',
+      '<script src="../thatsrich.js">'].join('\n')).appendTo(document.body);
+
+    $textarea[0].selectionStart = $textarea[0].selectionEnd = 7;
+
+    browserBot.triggerMouseEvent($textarea[0], 'click', true);
+
+    $textarea.val([
+      'Before',
+      'a\tb\tc',
+      'd\te\tf',
+      'g\th\ti',
+      'After',
+      ''].join('\n'));
+
+    triggerEvent($textarea[0], 'input', true);
+
+    equal($textarea.val(), [
+      'Before',
+      '   +---+---+---+',
+      '   | a | b | c |',
+      '   +---+---+---+',
+      '   | d | e | f |',
+      '   +---+---+---+',
+      '   | g | h | i |',
+      '   +---+---+---+',
+      'After',
+      ''].join('\n'));
+
+    $textarea.remove();
+  });

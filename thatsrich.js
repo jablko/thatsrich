@@ -18,12 +18,12 @@ while ((match = regexp.exec(textarea.value)) !== null) {
   var rows = [], cols = [], cells = [],
     content = [];
 
-  textarea.value.slice(match.index, regexp.lastIndex - 2).split(/^ *\|-/gm).forEach(function (itm, rowIdx) {
+  textarea.value.slice(match.index, regexp.lastIndex - 2).split(/^ *\|-/m).forEach(function (itm, rowIdx) {
       rows[rowIdx] = 1;
       cells[rowIdx] = [];
       content[rowIdx] = [];
 
-      itm.split(/^ *[|!]/gm).slice(1).forEach(function (itm, colIdx) {
+      itm.split(/^ *[|!]/m).slice(1).forEach(function (itm, colIdx) {
           content[rowIdx][colIdx] = itm = itm.trim();
           cells[rowIdx][colIdx] = itm.length;
           cols[colIdx] = Math.max(cols[colIdx] || 0, itm.length);
@@ -220,6 +220,41 @@ $(textarea).on({
     },
 
   input: function (evt) {
+      var end = 0,
+        match,
+        regexp = /(?:.*\t){2,}.*(?:\n(?:.*\t){2,}.*)*/g,
+        value = '';
+
+      // https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/RegExp/exec#Finding_successive_matches
+      while ((match = regexp.exec(this.value)) !== null) {
+        rows = [], cols = [], cells = [],
+          content = [];
+
+        this.value.slice(match.index, regexp.lastIndex).split('\n').forEach(function (itm, rowIdx) {
+            rows[rowIdx] = 1;
+            cells[rowIdx] = [];
+            content[rowIdx] = [];
+
+            itm.split('\t').forEach(function (itm, colIdx) {
+                content[rowIdx][colIdx] = itm = itm.trim();
+                cells[rowIdx][colIdx] = itm.length;
+                cols[colIdx] = Math.max(cols[colIdx] || 0, itm.length);
+              });
+          });
+
+        value += this.value.slice(end, match.index);
+        end = regexp.lastIndex;
+
+        tableStart = value.length,
+          separator = Array(indent + 1).join(' ') + '+' + cols.map(function (itm) { return Array(itm + 3).join('-') }).join('+') + '+';
+
+        value += separator + '\n' + content.map(function (itm) { return Array(indent + 1).join(' ') + '| ' + itm.map(function (itm, idx) { return itm + Array(cols[idx] - itm.length + 1).join(' ') }).join(' | ') + ' |\n' }).join(separator + '\n') + separator;
+
+        tableLength = value.length - tableStart;
+      }
+
+      this.value = value + this.value.slice(end);
+
       var inputLength = this.value.length - length,
         rowLength = indent + cols.reduce(function (a, b) { return a + b }) + cols.length * 3 + 2;
 
